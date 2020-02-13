@@ -770,17 +770,19 @@ def makeconfig(dirpath,  cubepath, search_pattern=["S1*_grd_*.tif"], orbsep=Fals
     ymin = ras.geo["ymin"]
     ymax = ras.geo["ymax"]
     years=[]
-    if orbsep:
-        orbits=[]
-    else:
-        orbits=["A", "D"]
+    orbits=[]
+    polarizations=[]
+    print(ras)
     for data in datasets:
         ras = Raster(data)
-        if round(ras.res[0],7) != res or round(ras.res[1],7) != res:
-            raise ValueError("Resolutions are different: {}, {}".format(ras.res, res))
+        #if round(ras.res[0],7) != res or round(ras.res[1],7) != res:
+        #    raise ValueError("Resolutions are different: {}, {}".format(ras.res, res))
         if ras.cols != cols:
+            print(ras)
+            print(ras.cols, ras.rows)
             raise ValueError("Number of columns  are different: {}, {}".format(ras.cols, cols))
         if ras.rows != rows:
+            print(ras)
             raise ValueError("Number of rows are different: {},{}".format(ras.rows, rows))
         meta=parse_datasetname(os.path.basename(data),parse_date=True)
         print(data)
@@ -789,7 +791,11 @@ def makeconfig(dirpath,  cubepath, search_pattern=["S1*_grd_*.tif"], orbsep=Fals
         years.append(meta["start"].year)
         if orbsep:
             orbits.append(meta["extensions"])
+        else:
+            orbits.append("A")
+        polarizations.append(meta["polarization"])
     print(cols, rows, xmin, xmax, ymin, ymax,res)
+    print(orbits)
     print(set(years))
     print(set(orbits))
     startyear=min(years)
@@ -817,12 +823,13 @@ def makeconfig(dirpath,  cubepath, search_pattern=["S1*_grd_*.tif"], orbsep=Fals
         filehandle.write("chunk_sizes=(365,30,30)\n")
 
     orbs=set(orbits)
+    pols = set(polarizations)
     with open(setup_script, "w") as filehandle:
         filehandle.write("#!/usr/bin/bash\n")
         filehandle.write("DATADIR={}\n".format(os.path.abspath(dirpath)))
         filehandle.write("cube-gen {0} ".format(cubepath))
         inputstring = " sentinel1:dir=$DATADIR:orbit={0}:polarisation={1} "
-        for orbit in set(orbits):
-            for pol in ["VH", "VV"]:
+        for orbit in orbs:
+            for pol in pols:
                 filehandle.write(inputstring.format(orbit, pol))
         filehandle.write(" -c {0} ".format(configname))
