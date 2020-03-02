@@ -748,22 +748,22 @@ class Product(object):
             yaml.dump(self.meta, yml, default_flow_style=False)
 
 
-def makeconfig(dirpath,  cubepath, search_pattern=["S1*_grd_*.tif"], orbsep=False):
+def makeconfig(dirpath,  cubepath, search_pattern=["S1*_grd_*.nc"], orbsep=False):
     """
     This functions allows the automatic generation of a config file for
     the ESDL datacube from a directory of files which have been stacked using
     the spatialist stack function.
     """
     datasets=finder(dirpath, search_pattern)
-
+    print(len(datasets))
     orbits = []
     ras = Raster(datasets[1])
     cols = ras.cols
     rows = ras.rows
     resx = round(ras.res[0],7)
     resy = round(ras.res[1],7)
-    if resx != resy:
-        raise ValueError("The x and y resolution has to be the same")
+    #if resx != resy:
+    #    raise ValueError("The x and y resolution has to be the same, got xres: {}, yres: {}".format(resx, resy))
     res = resx
     xmin = ras.geo["xmin"]
     xmax = ras.geo["xmax"]
