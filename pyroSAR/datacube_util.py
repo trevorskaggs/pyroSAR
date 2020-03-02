@@ -11,10 +11,6 @@ by pyroSAR for ingestion into an Open Data Cube.
     archive_s1 = '/.../sentinel1/GRD/processed'
     scenes_s1 = find_datasets(archive_s1, sensor=('S1A', 'S1B'), acquisition_mode='IW')
 
-    # group the found files by their file basenames
-    # files with the same basename are considered to belong to the same dataset
-    grouped = groupby(scenes_s1, 'outname_base')
-
     # define the polarization units describing the data sets
     units = {'VV': 'backscatter VV', 'VH': 'backscatter VH'}
 
@@ -23,7 +19,7 @@ by pyroSAR for ingestion into an Open Data Cube.
                  product_type='gamma0',
                  description='Gamma Naught RTC backscatter') as prod:
 
-        for dataset in grouped:
+        for dataset in scenes_s1:
             with Dataset(dataset, units=units) as ds:
 
                 # add the dataset to the product
@@ -644,7 +640,7 @@ class Product(object):
         with open(outname, 'w') as yml:
             yaml.dump(out, yml, default_flow_style=False)
 
-    def export_ingestion_yml(self, outname, product_name, ingest_location, chunking):
+    def export_ingestion_yml(self, outname, product_name, ingest_location):
         """
         Write a YML file, which can be used for ingesting indexed datasets into an Open Data Cube.
 
@@ -755,7 +751,7 @@ def makeconfig(dirpath,  cubepath, search_pattern=["S1*_grd_*.nc"], orbsep=False
     the spatialist stack function.
     """
     datasets=finder(dirpath, search_pattern)
-    print(len(datasets))
+
     orbits = []
     ras = Raster(datasets[1])
     cols = ras.cols
