@@ -297,15 +297,21 @@ def gpt(xmlfile, groups=None, cleanup=True,
     ------
     RuntimeError
     """
-    
+    print ('XML File: %s' % xmlfile)
+    print ('determining workflow')
     workflow = Workflow(xmlfile)
+    print ('Workflow: %s' % workflow)
     read = workflow['Read']
     write = workflow['Write']
+    print ('identifing scene')
     scene = identify(read.parameters['file'])
+    print ('Scene: %s' % scene)
+    print ('Scene Metadata: %s' % scene.meta)
     outname = write.parameters['file']
     suffix = workflow.suffix
     format = write.parameters['formatName']
     dem_name = workflow.tree.find('.//demName')
+    print ('Dem Name: %s' % dem_name)
     if dem_name is not None:
         if dem_name.text == 'External DEM':
             dem_nodata = float(workflow.tree.find('.//externalDEMNoDataValue').text)
@@ -315,6 +321,7 @@ def gpt(xmlfile, groups=None, cleanup=True,
     if 'Remove-GRD-Border-Noise' in workflow.ids \
             and removeS1BorderNoiseMethod == 'pyroSAR' \
             and scene.meta['IPF_version'] < 2.9:
+        print ('Inside IF')
         if 'SliceAssembly' in workflow.operators:
             raise RuntimeError("pyroSAR's custom border noise removal is not yet implemented for multiple scene inputs")
         xmlfile = os.path.join(outname,
@@ -324,7 +331,9 @@ def gpt(xmlfile, groups=None, cleanup=True,
         del workflow['Remove-GRD-Border-Noise']
         # remove the node name from the groups
         i = 0
+        print ('Outside: %s' % groups)
         while i < len(groups) - 1:
+            print (groups)
             if 'Remove-GRD-Border-Noise' in groups[i]:
                 del groups[i][groups[i].index('Remove-GRD-Border-Noise')]
             if len(groups[i]) == 0:
