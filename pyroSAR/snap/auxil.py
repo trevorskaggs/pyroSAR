@@ -143,7 +143,7 @@ def parse_node(name, use_existing=True):
         return Node(element)
 
 
-def execute(xmlfile, cleanup=True, gpt_exceptions=None, gpt_args=None, verbose=True):
+def execute(xmlfile, cleanup=True, gpt_exceptions=None, gpt_args=None, verbose=True, logger=logger):
     """
     execute SNAP workflows via the Graph Processing Tool gpt.
     This function merely calls gpt with some additional command
@@ -192,12 +192,14 @@ def execute(xmlfile, cleanup=True, gpt_exceptions=None, gpt_args=None, verbose=T
     if verbose:
         print(message)
     # try to find the GPT executable
+    logger.debug('trying to find the GPT executable')
     if gpt_exec is None:
         try:
             gpt_exec = ExamineSnap().gpt
         except AttributeError:
             raise RuntimeError('could not find SNAP GPT executable')
     # create the list of arguments to be passed to the subprocess module calling GPT
+    logger.debug(gpt_exec)
     cmd = [gpt_exec, '-e']
     if isinstance(gpt_args, list):
         cmd.extend(gpt_args)
@@ -212,11 +214,13 @@ def execute(xmlfile, cleanup=True, gpt_exceptions=None, gpt_args=None, verbose=T
         ])
     cmd.append(xmlfile)
     # execute the workflow
+    logger.debug(cmd)
     proc = sp.Popen(cmd, stdout=sp.PIPE, stderr=sp.PIPE)
+    logger.debug('DONE!')
     out, err = proc.communicate()
     out = out.decode('utf-8') if isinstance(out, bytes) else out
     err = err.decode('utf-8') if isinstance(err, bytes) else err
-    
+    logger.debug(out)
     # check for a message indicating an unknown parameter,
     # which can easily be removed from the workflow
     pattern = r"Error: \[NodeId: (?P<id>[a-zA-Z0-9-_]*)\] " \
@@ -229,18 +233,20 @@ def execute(xmlfile, cleanup=True, gpt_exceptions=None, gpt_args=None, verbose=T
     
     # delete unknown parameters and run the modified workflow
     elif proc.returncode == 1 and match is not None:
+        logger.debug(proc)
         replace = match.groupdict()
         with Workflow(xmlfile) as flow:
-            print('  removing parameter {id}:{par} and executing modified workflow'.format(**replace))
+            logger.debug('  removing parameter {id}:{par} and executing modified workflow'.format(**replace))
             node = flow[replace['id']]
             del node.parameters[replace['par']]
             flow.write(xmlfile)
         execute(xmlfile, cleanup=cleanup, gpt_exceptions=gpt_exceptions,
-                gpt_args=gpt_args, verbose=verbose)
+                gpt_args=gpt_args, verbose=verbose, logger=logger)
     
     # append additional information to the error message and raise an error
     else:
         if proc.returncode == -9:
+            logger.debug(prod.returncode)
             submessage = '[{}] the process was killed by SNAP (process return code -9). ' \
                          'One possible cause is a lack of memory.'.format(os.path.basename(xmlfile))
         else:
@@ -355,9 +361,9 @@ def gpt(xmlfile, groups=None, cleanup=True,
         if groups is not None:
             subs = split(xmlfile, groups)
             for sub in subs:
-                execute(sub, cleanup=cleanup, gpt_exceptions=gpt_exceptions, gpt_args=gpt_args)
+                execute(sub, cleanup=cleanup, gpt_exceptions=gpt_exceptions, gpt_args=gpt_args, logger=logger)
         else:
-            execute(xmlfile, cleanup=cleanup, gpt_exceptions=gpt_exceptions, gpt_args=gpt_args)
+            execute(xmlfile, cleanup=cleanup, gpt_exceptions=gpt_exceptions, gpt_args=gpt_args, logger=logger)
     except RuntimeError as e:
         if cleanup and os.path.exists(outname):
             shutil.rmtree(outname, onerror=windows_fileprefix)
