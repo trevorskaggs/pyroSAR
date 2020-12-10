@@ -341,16 +341,16 @@ def gpt(xmlfile, groups=None, cleanup=True,
             else:
                 i += 1
         # unpack the scene if necessary and perform the custom border noise removal
-        print('unpacking scene')
+        logger.debug('unpacking scene')
         scene.unpack(outname)
-        print('removing border noise..')
+        logger.debug('removing border noise..')
         scene.removeGRDBorderNoise(method=removeS1BorderNoiseMethod)
         # change the name of the input file to that of the unpacked archive
         read.parameters['file'] = scene.scene
         # write a new workflow file
         workflow.write(xmlfile)
     
-    print('executing node sequence{}..'.format('s' if groups is not None else ''))
+    logger.debug('executing node sequence{}..'.format('s' if groups is not None else ''))
     try:
         if groups is not None:
             subs = split(xmlfile, groups)
@@ -362,9 +362,9 @@ def gpt(xmlfile, groups=None, cleanup=True,
         if cleanup and os.path.exists(outname):
             shutil.rmtree(outname, onerror=windows_fileprefix)
         raise RuntimeError(str(e) + '\nfailed: {}'.format(xmlfile))
-    
+    logger.debug('Checking if ENVI')
     if format == 'ENVI':
-        print('converting to GTiff')
+        logger.debug('converting to GTiff')
         translateoptions = {'options': ['-q', '-co', 'INTERLEAVE=BAND', '-co', 'TILED=YES'],
                             'format': 'GTiff'}
         for item in finder(outname, ['*.img'], recursive=False):
@@ -380,6 +380,7 @@ def gpt(xmlfile, groups=None, cleanup=True,
             gdal_translate(item, name_new, translateoptions)
     # by default the nodata value is not registered in the GTiff metadata
     elif format == 'GeoTiff-BigTIFF':
+        logger.debug('BIGTIFF')
         ras = gdal.Open(outname + '.tif', GA_Update)
         for i in range(1, ras.RasterCount + 1):
             ras.GetRasterBand(i).SetNoDataValue(0)
@@ -387,6 +388,7 @@ def gpt(xmlfile, groups=None, cleanup=True,
     ###########################################################################
     # write the Sentinel-1 manifest.safe file as addition to the actual product
     readers = workflow['operator=Read']
+    logger.debug('Readers: %s' % readers)
     for reader in readers:
         infile = reader.parameters['file']
         try:
@@ -404,7 +406,7 @@ def gpt(xmlfile, groups=None, cleanup=True,
     ###########################################################################
     if cleanup and os.path.exists(outname):
         shutil.rmtree(outname, onerror=windows_fileprefix)
-    print('done')
+    logger.debug('done')
 
 
 def is_consistent(workflow):
