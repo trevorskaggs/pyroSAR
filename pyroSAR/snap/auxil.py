@@ -143,7 +143,7 @@ def parse_node(name, use_existing=True):
         return Node(element)
 
 
-def execute(xmlfile, cleanup=True, gpt_exceptions=None, gpt_args=None, verbose=True, logger=logger):
+def execute(xmlfile, cleanup=True, gpt_exceptions=None, gpt_args=None, verbose=True, logger=None):
     """
     execute SNAP workflows via the Graph Processing Tool gpt.
     This function merely calls gpt with some additional command
