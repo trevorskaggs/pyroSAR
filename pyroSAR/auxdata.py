@@ -373,7 +373,7 @@ class DEMHandler:
                               'vsi': '/vsizip/',
                               'pattern': {'dem': '*.hgt'}
                               },
-            'SRTM 3Sec': {'url': 'http://srtm.csi.cgiar.org/wp-content/uploads/files/srtm_5x5/tiff',
+            'SRTM 3Sec': {'url': 'http://capella-srtm3sec-public.s3-website-us-west-2.amazonaws.com',
                           'nodata': -32768.0,
                           'vsi': '/vsizip/',
                           'pattern': {'dem': 'srtm*.tif'}
